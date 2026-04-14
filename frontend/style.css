@@ -1,0 +1,482 @@
+/* ============================================================
+   style.css — Sistema de Frequência Escolar
+   Paleta: Azul Escuro (#0d2137), Branco (#ffffff), Cinza Claro (#f0f4f8)
+   Tipografia: Inter (Google Fonts fallback → system-ui)
+   ============================================================ */
+
+/* ── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --azul-escuro:   #0d2137;
+  --azul-medio:    #1a3a5c;
+  --azul-claro:    #2d6a9f;
+  --azul-acento:   #3b9eff;
+  --branco:        #ffffff;
+  --cinza-claro:   #f0f4f8;
+  --cinza-medio:   #c8d6e5;
+  --cinza-escuro:  #5a7391;
+  --verde:         #27ae60;
+  --verde-claro:   #d4edda;
+  --vermelho:      #e74c3c;
+  --vermelho-claro:#fde8e8;
+  --amarelo:       #f39c12;
+
+  --sombra-sm:     0 1px 4px rgba(0,0,0,.12);
+  --sombra-md:     0 4px 16px rgba(0,0,0,.14);
+  --sombra-lg:     0 8px 32px rgba(0,0,0,.18);
+
+  --raio:          10px;
+  --raio-lg:       16px;
+  --fonte-base:    system-ui, "Segoe UI", sans-serif;
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--fonte-base);
+  background: var(--cinza-claro);
+  color: var(--azul-escuro);
+  min-height: 100vh;
+}
+
+/* ── Cabeçalho ────────────────────────────────────────────── */
+.cabecalho {
+  background: linear-gradient(135deg, var(--azul-escuro) 0%, var(--azul-medio) 100%);
+  color: var(--branco);
+  box-shadow: var(--sombra-md);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.cabecalho__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cabecalho__logo {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+}
+
+.logo-icone {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.cabecalho__titulo {
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -.5px;
+}
+
+.cabecalho__subtitulo {
+  font-size: .75rem;
+  color: var(--cinza-medio);
+  margin-top: 2px;
+}
+
+.cabecalho__relogio {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--azul-acento);
+  background: rgba(255,255,255,.07);
+  padding: .4rem .9rem;
+  border-radius: var(--raio);
+}
+
+/* ── Abas ─────────────────────────────────────────────────── */
+.abas {
+  background: var(--azul-medio);
+  display: flex;
+  gap: .25rem;
+  padding: .5rem 1.5rem 0;
+  max-width: 100%;
+  overflow-x: auto;
+  border-bottom: 3px solid var(--azul-escuro);
+}
+
+.aba {
+  background: transparent;
+  border: none;
+  color: var(--cinza-medio);
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 500;
+  padding: .6rem 1.2rem;
+  border-radius: var(--raio) var(--raio) 0 0;
+  transition: background .2s, color .2s;
+  white-space: nowrap;
+}
+
+.aba:hover {
+  background: rgba(255,255,255,.12);
+  color: var(--branco);
+}
+
+.aba--ativa {
+  background: var(--cinza-claro);
+  color: var(--azul-escuro);
+  font-weight: 700;
+}
+
+/* ── Painéis de Conteúdo ──────────────────────────────────── */
+.painel {
+  max-width: 1200px;
+  margin: 1.5rem auto;
+  padding: 0 1.25rem 2rem;
+}
+
+.bloco__titulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--azul-escuro);
+  border-left: 4px solid var(--azul-acento);
+  padding-left: .6rem;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+/* ── Catraca Virtual ──────────────────────────────────────── */
+.catraca__layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .catraca__layout { grid-template-columns: 1fr; }
+}
+
+/* Moldura da câmera */
+.camera-moldura {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  border-radius: var(--raio-lg);
+  overflow: hidden;
+  box-shadow: var(--sombra-lg);
+}
+
+.camera-moldura--pequena {
+  aspect-ratio: 4 / 3;
+  max-width: 380px;
+}
+
+.camera-moldura video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Overlay com cantos decorativos */
+.camera-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.camera-overlay__linha {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-color: var(--azul-acento);
+  border-style: solid;
+}
+
+.top-left     { top: 12px;    left: 12px;    border-width: 3px 0 0 3px; }
+.top-right    { top: 12px;    right: 12px;   border-width: 3px 3px 0 0; }
+.bottom-left  { bottom: 12px; left: 12px;    border-width: 0 0 3px 3px; }
+.bottom-right { bottom: 12px; right: 12px;   border-width: 0 3px 3px 0; }
+
+/* Controles da câmera */
+.camera-controles {
+  display: flex;
+  gap: .75rem;
+  margin-top: .75rem;
+}
+
+/* Status Box */
+.status-box {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .75rem;
+  padding: .6rem 1rem;
+  background: var(--branco);
+  border-radius: var(--raio);
+  font-size: .88rem;
+  box-shadow: var(--sombra-sm);
+  min-height: 2.5rem;
+}
+
+.status-indicador {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cinza-medio);
+  flex-shrink: 0;
+  transition: background .3s;
+}
+
+.status-indicador--ativo    { background: var(--verde);   animation: pulso 1.4s infinite; }
+.status-indicador--erro     { background: var(--vermelho); }
+.status-indicador--aviso    { background: var(--amarelo);  }
+
+@keyframes pulso {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .4; }
+}
+
+/* Cartão do Aluno reconhecido */
+.cartao-aluno {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  background: var(--branco);
+  border-radius: var(--raio-lg);
+  box-shadow: var(--sombra-md);
+  border-left: 5px solid var(--cinza-medio);
+  transition: border-color .3s;
+}
+
+.cartao-aluno--sucesso { border-left-color: var(--verde);  background: var(--verde-claro);  }
+.cartao-aluno--erro    { border-left-color: var(--vermelho); background: var(--vermelho-claro); }
+
+.cartao-aluno__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--azul-claro);
+  color: var(--branco);
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.cartao-aluno__nome {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--azul-escuro);
+}
+
+.cartao-aluno__turma,
+.cartao-aluno__horario {
+  font-size: .82rem;
+  color: var(--cinza-escuro);
+  margin-top: 2px;
+}
+
+/* Tabela de Recentes */
+.tabela-wrapper {
+  overflow-x: auto;
+  border-radius: var(--raio);
+  box-shadow: var(--sombra-sm);
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--branco);
+  font-size: .88rem;
+}
+
+.tabela thead {
+  background: var(--azul-escuro);
+  color: var(--branco);
+}
+
+.tabela th,
+.tabela td {
+  padding: .6rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--cinza-claro);
+}
+
+.tabela tbody tr:hover { background: #eef3f9; }
+.tabela tbody tr:last-child td { border-bottom: none; }
+.tabela__vazio { text-align: center; color: var(--cinza-escuro); padding: 1.5rem; }
+
+/* ── Dashboard ────────────────────────────────────────────── */
+.dashboard__controles {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.campo-data {
+  border: 1.5px solid var(--cinza-medio);
+  border-radius: var(--raio);
+  padding: .45rem .75rem;
+  font-size: .9rem;
+  color: var(--azul-escuro);
+  background: var(--branco);
+  outline: none;
+  transition: border-color .2s;
+}
+
+.campo-data:focus { border-color: var(--azul-acento); }
+
+.dashboard__cards {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.card-metrica {
+  flex: 1;
+  min-width: 140px;
+  background: var(--branco);
+  border-radius: var(--raio-lg);
+  padding: 1.2rem 1.5rem;
+  box-shadow: var(--sombra-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-top: 4px solid var(--azul-acento);
+}
+
+.card-metrica__valor {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--azul-escuro);
+  line-height: 1;
+}
+
+.card-metrica__label {
+  font-size: .78rem;
+  color: var(--cinza-escuro);
+  margin-top: .4rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.grafico-wrapper {
+  background: var(--branco);
+  border-radius: var(--raio-lg);
+  padding: 1.5rem;
+  box-shadow: var(--sombra-md);
+}
+
+/* ── Cadastro de Aluno ────────────────────────────────────── */
+.cadastro__layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .cadastro__layout { grid-template-columns: 1fr; }
+}
+
+.campo-grupo {
+  margin-bottom: .9rem;
+}
+
+.label-campo {
+  display: block;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--azul-escuro);
+  margin-bottom: .3rem;
+}
+
+.campo-texto,
+.campo-select {
+  width: 100%;
+  border: 1.5px solid var(--cinza-medio);
+  border-radius: var(--raio);
+  padding: .55rem .85rem;
+  font-size: .9rem;
+  color: var(--azul-escuro);
+  background: var(--branco);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.campo-texto:focus,
+.campo-select:focus {
+  border-color: var(--azul-acento);
+  box-shadow: 0 0 0 3px rgba(59,158,255,.18);
+}
+
+.preview-foto {
+  margin-top: .75rem;
+  border-radius: var(--raio);
+  overflow: hidden;
+  box-shadow: var(--sombra-sm);
+  position: relative;
+}
+
+.preview-foto img {
+  width: 100%;
+  display: block;
+  border-radius: var(--raio);
+}
+
+.btn--pequeno {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: .25rem .6rem;
+  font-size: .78rem;
+}
+
+/* ── Botões ───────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  padding: .55rem 1.2rem;
+  border: none;
+  border-radius: 50px;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter .2s, transform .1s, box-shadow .2s;
+  box-shadow: var(--sombra-sm);
+  white-space: nowrap;
+}
+
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.btn--primario  { background: var(--azul-claro);  color: var(--branco); }
+.btn--secundario{ background: var(--cinza-medio);  color: var(--azul-escuro); }
+.btn--sucesso   { background: var(--verde);         color: var(--branco); }
+.btn--perigo    { background: var(--vermelho);       color: var(--branco); }
+
+.btn--primario:not(:disabled):hover,
+.btn--sucesso:not(:disabled):hover,
+.btn--perigo:not(:disabled):hover { filter: brightness(1.12); box-shadow: var(--sombra-md); }
+
+.btn--bloco { width: 100%; margin-top: .5rem; }
+
+/* ── Scrollbar personalizada ──────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--cinza-claro); }
+::-webkit-scrollbar-thumb { background: var(--cinza-medio); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--azul-claro); }

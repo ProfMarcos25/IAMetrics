@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Frequência Escolar — IA</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ── Cabeçalho ─────────────────────────────────────────── -->
+  <header class="cabecalho">
+    <div class="cabecalho__inner">
+      <div class="cabecalho__logo">
+        <span class="logo-icone">🎓</span>
+        <div>
+          <h1 class="cabecalho__titulo">FrequêncIA</h1>
+          <p class="cabecalho__subtitulo">Sistema de Controle de Presença Escolar</p>
+        </div>
+      </div>
+      <div class="cabecalho__relogio" id="relogio">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- ── Abas de Navegação ─────────────────────────────────── -->
+  <nav class="abas" role="tablist">
+    <button class="aba aba--ativa" role="tab" data-aba="catraca" aria-selected="true">
+      📷 Catraca Virtual
+    </button>
+    <button class="aba" role="tab" data-aba="dashboard" aria-selected="false">
+      📊 Dashboard de Gestão
+    </button>
+    <button class="aba" role="tab" data-aba="cadastro" aria-selected="false">
+      ➕ Cadastrar Aluno
+    </button>
+  </nav>
+
+  <!-- ════════════════════════════════════════════════════════
+       ABA 1 — CATRACA VIRTUAL
+  ══════════════════════════════════════════════════════════ -->
+  <section id="painel-catraca" class="painel painel--ativo" role="tabpanel">
+    <div class="catraca__layout">
+
+      <!-- Câmera + Controles -->
+      <div class="catraca__camera-bloco">
+        <div class="camera-moldura" id="cameraMoldura">
+          <video id="videoCamera" autoplay playsinline muted></video>
+          <canvas id="canvasCaptura" style="display:none;"></canvas>
+          <div class="camera-overlay" id="cameraOverlay">
+            <div class="camera-overlay__linha top-left"></div>
+            <div class="camera-overlay__linha top-right"></div>
+            <div class="camera-overlay__linha bottom-left"></div>
+            <div class="camera-overlay__linha bottom-right"></div>
+          </div>
+        </div>
+
+        <div class="camera-controles">
+          <button class="btn btn--primario" id="btnIniciarCamera">▶ Iniciar Câmera</button>
+          <button class="btn btn--perigo"   id="btnPararCamera"   disabled>⏹ Parar</button>
+        </div>
+
+        <div class="status-box" id="statusBox">
+          <span class="status-indicador" id="statusIndicador"></span>
+          <span id="statusTexto">Aguardando câmera...</span>
+        </div>
+      </div>
+
+      <!-- Resultado do Reconhecimento -->
+      <div class="catraca__resultado-bloco">
+        <h2 class="bloco__titulo">Último Reconhecimento</h2>
+
+        <div class="cartao-aluno" id="cartaoAluno">
+          <div class="cartao-aluno__avatar" id="avatarAluno">?</div>
+          <div class="cartao-aluno__info">
+            <p class="cartao-aluno__nome"   id="nomeAluno">—</p>
+            <p class="cartao-aluno__turma"  id="turmaAluno">—</p>
+            <p class="cartao-aluno__horario" id="horarioAluno">—</p>
+          </div>
+        </div>
+
+        <!-- Feed de Entradas Recentes -->
+        <h2 class="bloco__titulo" style="margin-top: 1.5rem;">Entradas Recentes</h2>
+        <div class="tabela-wrapper">
+          <table class="tabela" id="tabelaRecentes">
+            <thead>
+              <tr>
+                <th>Aluno</th>
+                <th>Turma</th>
+                <th>Horário</th>
+              </tr>
+            </thead>
+            <tbody id="corpoTabelaRecentes">
+              <tr><td colspan="3" class="tabela__vazio">Sem registros ainda.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       ABA 2 — DASHBOARD DE GESTÃO
+  ══════════════════════════════════════════════════════════ -->
+  <section id="painel-dashboard" class="painel" role="tabpanel" hidden>
+
+    <div class="dashboard__controles">
+      <label class="label-campo" for="inputData">
+        Data:
+        <input type="date" id="inputData" class="campo-data" />
+      </label>
+      <button class="btn btn--primario" id="btnAtualizarDashboard">🔄 Atualizar</button>
+    </div>
+
+    <div class="dashboard__cards">
+      <div class="card-metrica">
+        <span class="card-metrica__valor" id="totalPresencas">0</span>
+        <span class="card-metrica__label">Presenças Hoje</span>
+      </div>
+      <div class="card-metrica">
+        <span class="card-metrica__valor" id="horaMovimenta">—</span>
+        <span class="card-metrica__label">Hora de Pico</span>
+      </div>
+    </div>
+
+    <div class="grafico-wrapper">
+      <h2 class="bloco__titulo">Fluxo de Entradas por Hora</h2>
+      <canvas id="graficoFluxo" height="100"></canvas>
+    </div>
+
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════
+       ABA 3 — CADASTRAR ALUNO
+  ══════════════════════════════════════════════════════════ -->
+  <section id="painel-cadastro" class="painel" role="tabpanel" hidden>
+    <div class="cadastro__layout">
+
+      <div class="cadastro__form-bloco">
+        <h2 class="bloco__titulo">Dados do Aluno</h2>
+        <form id="formCadastro" novalidate>
+
+          <div class="campo-grupo">
+            <label class="label-campo" for="cNome">Nome Completo *</label>
+            <input type="text" id="cNome" class="campo-texto" placeholder="Ex.: Maria Aparecida" required />
+          </div>
+
+          <div class="campo-grupo">
+            <label class="label-campo" for="cTurma">Turma *</label>
+            <input type="text" id="cTurma" class="campo-texto" placeholder="Ex.: 5A" required />
+          </div>
+
+          <div class="campo-grupo">
+            <label class="label-campo" for="cTelefone">Telefone do Responsável *</label>
+            <input type="tel" id="cTelefone" class="campo-texto" placeholder="+5511999990000" required />
+          </div>
+
+          <div class="campo-grupo">
+            <label class="label-campo" for="cCanal">Canal de Notificação</label>
+            <select id="cCanal" class="campo-select">
+              <option value="WHATSAPP">WhatsApp</option>
+              <option value="SMS">SMS</option>
+              <option value="TELEGRAM">Telegram</option>
+            </select>
+          </div>
+
+          <div class="campo-grupo" id="grupoTelegramId" style="display:none;">
+            <label class="label-campo" for="cTelegramId">Telegram Chat ID</label>
+            <input type="text" id="cTelegramId" class="campo-texto" placeholder="Ex.: 123456789" />
+          </div>
+
+          <button type="submit" class="btn btn--primario btn--bloco" id="btnCadastrar" disabled>
+            💾 Cadastrar Aluno
+          </button>
+
+          <div class="status-box" id="statusCadastro" style="display:none;"></div>
+        </form>
+      </div>
+
+      <!-- Captura da foto para cadastro -->
+      <div class="cadastro__camera-bloco">
+        <h2 class="bloco__titulo">Foto do Aluno</h2>
+        <div class="camera-moldura camera-moldura--pequena" id="cadastroMoldura">
+          <video id="videoCadastro" autoplay playsinline muted></video>
+          <canvas id="canvasCadastro" style="display:none;"></canvas>
+        </div>
+        <div class="camera-controles">
+          <button class="btn btn--secundario" id="btnCameraFoto">📷 Abrir Câmera</button>
+          <button class="btn btn--sucesso"    id="btnCapturarFoto" disabled>📸 Capturar Foto</button>
+        </div>
+        <div id="previewFoto" class="preview-foto" style="display:none;">
+          <img id="imgPreview" src="" alt="Preview da foto capturada" />
+          <button class="btn btn--perigo btn--pequeno" id="btnDescartarFoto">✖ Descartar</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
