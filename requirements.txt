@@ -11,6 +11,9 @@ psycopg[binary]>=3.1.0
 # Windows: instale CMake + Visual C++ Build Tools antes do pip install
 dlib>=19.24.0
 face_recognition>=1.3.0
+# Modelos treinados usados internamente pelo face_recognition (dlib .dat files)
+# Ref: https://github.com/ageitgey/face_recognition_models
+face_recognition_models>=0.1.0
 opencv-python>=4.9.0
 numpy>=1.26.0
 

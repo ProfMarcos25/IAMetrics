@@ -27,10 +27,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(aplicacao: FastAPI):
+    """
+    Evento de startup: valida os modelos .dat do face_recognition_models
+    antes de aceitar requisições.
+    Ref: https://github.com/ageitgey/face_recognition_models
+    """
+    logger.info("Iniciando validação dos modelos face_recognition_models...")
+    face_engine.validar_modelos()
+    logger.info("Todos os modelos validados. API pronta.")
+    yield
+
 app = FastAPI(
     title="Sistema de Frequência Escolar — IA",
     description="API REST para controle de presença via reconhecimento facial.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Permite requisições do front-end (mesmo domínio ou localhost de dev)

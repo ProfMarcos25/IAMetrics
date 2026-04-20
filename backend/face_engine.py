@@ -1,31 +1,84 @@
 """
 face_engine.py — Serviço de IA (Visão Computacional)
+Referências:
+  - https://github.com/ageitgey/face_recognition
+  - https://github.com/ageitgey/face_recognition_models
+
+Modelos .dat utilizados (via face_recognition_models):
+  - shape_predictor_5_face_landmarks.dat   → detecção de 5 pontos (catraca, rápido)
+  - shape_predictor_68_face_landmarks.dat  → detecção de 68 pontos (cadastro, preciso)
+  - dlib_face_recognition_resnet_model_v1.dat → ResNet que gera embedding 128-d
+  - mmod_human_face_detector.dat           → detector CNN (model="cnn")
+
 Responsabilidades:
+  - Validar no startup que todos os modelos .dat estão presentes
   - Decodificar imagens Base64 enviadas pelo front-end
-  - Detectar rostos com OpenCV
-  - Gerar embeddings de 128 dimensões com face_recognition (dlib)
+  - Detectar rostos com OpenCV + dlib
+  - Gerar embeddings de 128 dimensões com face_recognition
   - Nunca salvar imagens originais em disco; trabalhar apenas em memória
 """
 
 import base64
 import logging
+import os
 
 import cv2
 import face_recognition
+import face_recognition_models
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
 # ── Parâmetros de Detecção ────────────────────────────────────────────────────
-# Modelo de detecção: "hog" é mais rápido; "cnn" é mais preciso (requer GPU)
-# Referência: https://github.com/ageitgey/face_recognition
+# Modelo de detecção facial:
+#   "hog" — HOG + SVM, CPU, rápido (padrão)
+#   "cnn" — MMOD CNN, GPU recomendada, mais preciso
+# Ref: face_recognition_models.cnn_face_detector_model_location()
 MODELO_DETECCAO = "hog"
 
-# num_jitters: quantas vezes re-amostrar o rosto ao calcular o encoding.
-# Valores maiores = mais preciso mas mais lento. 100 = praticamente perfeito.
-# Use 1 na catraca (velocidade) e 5+ no cadastro (precisão máxima).
+# num_jitters: re-amostragens do rosto ao gerar o encoding.
+# Maior = mais preciso, mais lento. Use 1 na catraca, 5+ no cadastro.
 NUM_JITTERS_CATRACA  = 1
 NUM_JITTERS_CADASTRO = 5
+
+# Modelo de landmark para geração do encoding (face_encodings model=):
+#   "small" → shape_predictor_5_face_landmarks.dat  (5 pts — mais rápido)
+#   "large" → shape_predictor_68_face_landmarks.dat (68 pts — mais preciso)
+# Ref: https://github.com/ageitgey/face_recognition_models
+MODELO_ENCODING_CATRACA  = "small"   # velocidade — catraca em tempo real
+MODELO_ENCODING_CADASTRO = "large"   # precisão máxima — foto estática
+
+
+# ── Validação dos Modelos no Startup ──────────────────────────────────────────
+
+def validar_modelos() -> None:
+    """
+    Verifica se todos os arquivos .dat do face_recognition_models estão
+    presentes em disco antes de iniciar a API.
+
+    Lança:
+        FileNotFoundError — se qualquer modelo estiver ausente.
+    """
+    modelos = {
+        "Landmark 5 pts (catraca)": face_recognition_models.pose_predictor_five_point_model_location(),
+        "Landmark 68 pts (cadastro)": face_recognition_models.pose_predictor_model_location(),
+        "ResNet 128-d encoding": face_recognition_models.face_recognition_model_location(),
+        "CNN face detector": face_recognition_models.cnn_face_detector_model_location(),
+    }
+
+    ausentes = []
+    for nome, caminho in modelos.items():
+        if os.path.isfile(caminho):
+            logger.info("✅ Modelo OK: %s → %s", nome, caminho)
+        else:
+            logger.error("❌ Modelo ausente: %s → %s", nome, caminho)
+            ausentes.append(nome)
+
+    if ausentes:
+        raise FileNotFoundError(
+            f"Modelos face_recognition_models não encontrados: {ausentes}. "
+            "Execute: pip install face_recognition_models"
+        )
 
 
 # ── Decodificação da Imagem ───────────────────────────────────────────────────
@@ -100,10 +153,13 @@ def gerar_embedding(imagem_base64: str) -> list[float]:
 
     # Usa apenas o primeiro rosto detectado (frame de catraca = 1 pessoa)
     # num_jitters=NUM_JITTERS_CATRACA — prioriza velocidade no reconhecimento em tempo real
+    # model=MODELO_ENCODING_CATRACA  — usa shape_predictor_5_face_landmarks.dat (5 pts, rápido)
+    # Ref: https://github.com/ageitgey/face_recognition_models
     embeddings = face_recognition.face_encodings(
         imagem_rgb,
         known_face_locations=localizacoes,
         num_jitters=NUM_JITTERS_CATRACA,
+        model=MODELO_ENCODING_CATRACA,
     )
 
     if not embeddings:
@@ -140,10 +196,13 @@ def processar_cadastro(imagem_base64: str) -> list[float]:
         raise ValueError("Nenhum rosto detectado na imagem de cadastro.")
 
     # num_jitters=NUM_JITTERS_CADASTRO — prioriza precisão máxima no cadastro
+    # model=MODELO_ENCODING_CADASTRO  — usa shape_predictor_68_face_landmarks.dat (68 pts, preciso)
+    # Ref: https://github.com/ageitgey/face_recognition_models
     embeddings = face_recognition.face_encodings(
         imagem_rgb,
         known_face_locations=localizacoes,
         num_jitters=NUM_JITTERS_CADASTRO,
+        model=MODELO_ENCODING_CADASTRO,
     )
 
     if not embeddings:
