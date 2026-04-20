@@ -1,0 +1,100 @@
+# ============================================================
+# .gitignore — FrequêncIA (Python / FastAPI / PostgreSQL)
+# ============================================================
+
+# ── Variáveis de Ambiente (NUNCA commitar!) ───────────────
+.env
+*.env
+.env.*
+!.env.example
+
+# ── Ambiente Virtual Python ───────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.Python
+
+# ── Cache Python ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# ── Distribuição / Build ──────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+
+# ── Testes e Cobertura ────────────────────────────────────
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.cover
+.hypothesis/
+
+# ── Type Checking ─────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# ── IDEs e Editores ───────────────────────────────────────
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────
+*.log
+logs/
+*.log.*
+
+# ── Imagens capturadas (segurança / privacidade) ──────────
+# O sistema NÃO salva imagens, mas por segurança:
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.gif
+captures/
+frames/
+fotos/
+
+# ── Banco de Dados local (backups / dumps) ────────────────
+*.sql.bak
+*.dump
+*.backup
+db_backup/
+
+# ── Jupyter Notebooks (checkpoints) ──────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Arquivos temporários do sistema ──────────────────────
+tmp/
+temp/
+.tmp/
+*.tmp
+
+# ── Dependências (instaladas via pip) ────────────────────
+# Não commitar o conteúdo do venv — usar requirements.txt
+site-packages/
+
+# ── Uvicorn / FastAPI ─────────────────────────────────────
+*.pid
+
+# ── Outros ───────────────────────────────────────────────
+*.bak
+*.orig
+.cache/

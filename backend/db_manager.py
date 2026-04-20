@@ -7,11 +7,11 @@ Responsabilidades:
   - Registrar presença com regra de bloqueio de duplicidade (30 min)
   - Fornecer dados agregados para o dashboard
 """
-
 import os
 import numpy as np
-import psycopg2
-import psycopg2.extras
+import face_recognition
+import psycopg
+from psycopg.rows import dict_row
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
@@ -26,11 +26,11 @@ LIMIAR_RECONHECIMENTO  = 0.55  # Distância Euclidiana máxima para aceitar iden
 
 # ── Conexão ───────────────────────────────────────────────────────────────────
 
-def obter_conexao() -> psycopg2.extensions.connection:
+def obter_conexao() -> psycopg.Connection:
     """Abre e retorna uma conexão com o banco de dados PostgreSQL."""
-    conexao = psycopg2.connect(URL_BANCO, cursor_factory=psycopg2.extras.RealDictCursor)
+    # No psycopg3, usamos row_factory=dict_row no lugar de cursor_factory
+    conexao = psycopg.connect(URL_BANCO, row_factory=dict_row)
     return conexao
-
 
 # ── Alunos ────────────────────────────────────────────────────────────────────
 
@@ -98,22 +98,19 @@ def buscar_aluno_por_id(aluno_id: int) -> dict | None:
     return dict(linha) if linha else None
 
 
-# ── Reconhecimento por Distância Euclidiana ───────────────────────────────────
-
-def _distancia_euclidiana(vetor_a: list[float], vetor_b: list[float]) -> float:
-    """Calcula a distância Euclidiana entre dois embeddings de 128 dimensões."""
-    arr_a = np.array(vetor_a, dtype=np.float64)
-    arr_b = np.array(vetor_b, dtype=np.float64)
-    return float(np.linalg.norm(arr_a - arr_b))
-
+# ── Reconhecimento via face_recognition.face_distance() ──────────────────────
+# Referência: https://github.com/ageitgey/face_recognition
+# face_distance() calcula a Distância Euclidiana entre embeddings — é a função
+# nativa e vetorizada da biblioteca, equivalente ao cálculo manual com numpy.
 
 def identificar_aluno(embedding_desconhecido: list[float]) -> dict | None:
     """
-    Compara o embedding recebido com todos os embeddings cadastrados.
+    Compara o embedding recebido com todos os embeddings cadastrados usando
+    face_recognition.face_distance() — função oficial da biblioteca ageitgey.
 
-    Percorre todos os alunos e calcula a Distância Euclidiana entre o vetor
-    desconhecido e cada vetor armazenado. Retorna o aluno com a menor distância,
-    desde que esteja abaixo do limiar definido em LIMIAR_RECONHECIMENTO.
+    face_distance() retorna um array de distâncias Euclidianas entre o vetor
+    desconhecido e cada vetor cadastrado. Distâncias menores = mais parecido.
+    O limiar padrão da biblioteca é 0.6; usamos 0.55 para maior rigor.
 
     Retorna:
         Dicionário do aluno identificado ou None se nenhum corresponder.
@@ -122,21 +119,28 @@ def identificar_aluno(embedding_desconhecido: list[float]) -> dict | None:
     if not todos_alunos:
         return None
 
-    melhor_aluno   = None
-    menor_distancia = float("inf")
+    alunos_validos = [
+        aluno for aluno in todos_alunos
+        if aluno.get("embedding_facial") and len(aluno["embedding_facial"]) == 128
+    ]
 
-    for aluno in todos_alunos:
-        embedding_cadastrado = aluno.get("embedding_facial")
-        if not embedding_cadastrado or len(embedding_cadastrado) != 128:
-            continue
+    if not alunos_validos:
+        return None
 
-        distancia = _distancia_euclidiana(embedding_desconhecido, embedding_cadastrado)
+    # Monta matriz de embeddings cadastrados (shape: N x 128)
+    embeddings_cadastrados = np.array(
+        [aluno["embedding_facial"] for aluno in alunos_validos], dtype=np.float64
+    )
+    vetor_desconhecido = np.array(embedding_desconhecido, dtype=np.float64)
 
-        if distancia < menor_distancia:
-            menor_distancia = distancia
-            melhor_aluno    = aluno
+    # face_distance() — função oficial; retorna array de N distâncias Euclidianas
+    distancias = face_recognition.face_distance(embeddings_cadastrados, vetor_desconhecido)
 
-    if melhor_aluno and menor_distancia <= LIMIAR_RECONHECIMENTO:
+    indice_melhor = int(np.argmin(distancias))
+    menor_distancia = float(distancias[indice_melhor])
+
+    if menor_distancia <= LIMIAR_RECONHECIMENTO:
+        melhor_aluno = alunos_validos[indice_melhor]
         melhor_aluno["distancia_reconhecimento"] = round(menor_distancia, 4)
         return melhor_aluno
 

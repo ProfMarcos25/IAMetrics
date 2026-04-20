@@ -8,7 +8,6 @@ Responsabilidades:
 """
 
 import base64
-import io
 import logging
 
 import cv2
@@ -19,7 +18,14 @@ logger = logging.getLogger(__name__)
 
 # ── Parâmetros de Detecção ────────────────────────────────────────────────────
 # Modelo de detecção: "hog" é mais rápido; "cnn" é mais preciso (requer GPU)
+# Referência: https://github.com/ageitgey/face_recognition
 MODELO_DETECCAO = "hog"
+
+# num_jitters: quantas vezes re-amostrar o rosto ao calcular o encoding.
+# Valores maiores = mais preciso mas mais lento. 100 = praticamente perfeito.
+# Use 1 na catraca (velocidade) e 5+ no cadastro (precisão máxima).
+NUM_JITTERS_CATRACA  = 1
+NUM_JITTERS_CADASTRO = 5
 
 
 # ── Decodificação da Imagem ───────────────────────────────────────────────────
@@ -93,7 +99,12 @@ def gerar_embedding(imagem_base64: str) -> list[float]:
         raise ValueError("Nenhum rosto detectado na imagem enviada.")
 
     # Usa apenas o primeiro rosto detectado (frame de catraca = 1 pessoa)
-    embeddings = face_recognition.face_encodings(imagem_rgb, known_face_locations=localizacoes)
+    # num_jitters=NUM_JITTERS_CATRACA — prioriza velocidade no reconhecimento em tempo real
+    embeddings = face_recognition.face_encodings(
+        imagem_rgb,
+        known_face_locations=localizacoes,
+        num_jitters=NUM_JITTERS_CATRACA,
+    )
 
     if not embeddings:
         raise ValueError("Não foi possível gerar o embedding para o rosto detectado.")
@@ -120,7 +131,25 @@ def processar_cadastro(imagem_base64: str) -> list[float]:
     Retorna:
         Lista de 128 floats pronta para ser salva no banco de dados.
     """
-    return gerar_embedding(imagem_base64)
+    imagem_bgr = _base64_para_array_bgr(imagem_base64)
+    imagem_rgb = _bgr_para_rgb(imagem_bgr)
+
+    localizacoes = face_recognition.face_locations(imagem_rgb, model=MODELO_DETECCAO)
+
+    if not localizacoes:
+        raise ValueError("Nenhum rosto detectado na imagem de cadastro.")
+
+    # num_jitters=NUM_JITTERS_CADASTRO — prioriza precisão máxima no cadastro
+    embeddings = face_recognition.face_encodings(
+        imagem_rgb,
+        known_face_locations=localizacoes,
+        num_jitters=NUM_JITTERS_CADASTRO,
+    )
+
+    if not embeddings:
+        raise ValueError("Não foi possível gerar o embedding para o rosto de cadastro.")
+
+    return embeddings[0].tolist()
 
 
 # ── Detecção de Múltiplos Rostos (utilitário) ─────────────────────────────────
