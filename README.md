@@ -382,6 +382,23 @@ curl -X POST http://localhost:8000/reconhecer \
 
 ---
 
+* --------------------------------------------------------------------------- *
+*                           COMANDOS - SQL                                    *  
+* --------------------------------------------------------------------------- *
+
+
+
+UPDATE public.alunos 
+SET telefone_responsavel = '+551199999999999' 
+WHERE id = 1;
+
+
+SELECT id, nome, turma, telefone_responsavel, embedding_facial, canal_preferencial, telegram_chat_id, criado_em
+	FROM public.alunos;
+
+DELETE FROM nome_da_tabela WHERE id = 1;
+	
+
 ## Solução de Problemas
 
 ### ❌ `dlib` falha na instalação (Windows)

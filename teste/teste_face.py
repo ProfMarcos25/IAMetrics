@@ -35,7 +35,7 @@ def inserir_aluno_teste():
     valores = (
         "Marco Xavier",         # nome
         "Turma Teste",          # turma
-        "11999999999",          # telefone_responsavel
+        "+5511995045853",       # telefone_responsavel
         embedding_lista,        # embedding_facial
         "WHATSAPP"              # canal_preferencial
     )
