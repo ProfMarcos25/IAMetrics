@@ -246,10 +246,6 @@ Esse script criará:
 
 ### 3. Verifique as tabelas
 
-```powershell
-psql -U postgres -d frequencia_escolar -c "\dt"
-```
-
 Saída esperada:
 ```
           List of relations
@@ -267,7 +263,6 @@ Saída esperada:
 
 ```powershell
 git clone https://github.com/ProfMarcos25/IAMetrics.git
-cd IAMetrics
 ```
 
 ```powershell
@@ -282,13 +277,14 @@ py -m venv .venv
 
 ### 3. Ative o ambiente virtual
 
+# Windows (PowerShell)
 ```powershell
 # Windows (PowerShell)
 .venv\Scripts\Activate.ps1
 ```
-
-```powershell
 # Windows (CMD)
+```powershell
+
 .venv\Scripts\activate.bat
 ```
 
@@ -357,14 +353,7 @@ INTERVALO_DUPLICIDADE_MINUTOS=30
 
 ## Configuração dos Serviços de Notificação
 
-### Opção A — WhatsApp / SMS via Twilio
-
-1. Acesse [console.twilio.com](https://console.twilio.com/) e crie uma conta gratuita
-2. Ative o **Twilio Sandbox for WhatsApp** (em Messaging → Try it out)
-3. Cada responsável deve enviar a mensagem de adesão ao sandbox uma vez
-4. Copie o **Account SID**, **Auth Token** e o número Twilio para o `.env`
-
-### Opção B — Telegram Bot
+### Telegram Bot
 
 1. Abra o Telegram e pesquise por **@BotFather**
 2. Envie `/newbot`, escolha nome e username para o bot
@@ -496,15 +485,22 @@ curl -X POST http://localhost:8000/reconhecer \
 
 
 
+```powershell
 UPDATE public.alunos 
 SET telefone_responsavel = '+551199999999999' 
 WHERE id = 1;
+```
 
-
+```powershell
 SELECT id, nome, turma, telefone_responsavel, embedding_facial, canal_preferencial, telegram_chat_id, criado_em
 	FROM public.alunos;
+```
 
+```powershell
 DELETE FROM nome_da_tabela WHERE id = 1;
+```
+
+
 	
 
 ## Solução de Problemas
