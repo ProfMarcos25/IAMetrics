@@ -47,6 +47,8 @@ O **FrequêncIA** é um sistema escolar que substitui o controle manual de chama
 <img width="451" height="382" alt="image" src="https://github.com/user-attachments/assets/099f4cf9-1fb9-4075-8b3f-7a9a86af8b91" />
 
 
+## Descrição da aquitetura
+
 ```
 IAMetrics/
 ├── requirements.txt          # Dependências Python
