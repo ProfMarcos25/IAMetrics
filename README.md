@@ -43,6 +43,10 @@ O **FrequêncIA** é um sistema escolar que substitui o controle manual de chama
 
 ## Arquitetura do Projeto
 
+
+<img width="451" height="382" alt="image" src="https://github.com/user-attachments/assets/099f4cf9-1fb9-4075-8b3f-7a9a86af8b91" />
+
+
 ```
 IAMetrics/
 ├── requirements.txt          # Dependências Python
@@ -121,19 +125,114 @@ brew install python@3.11
 
 ### 1. Crie o banco de dados
 
-```powershell
-# Conecte ao PostgreSQL como superusuário
-psql -U postgres
 
-# Dentro do psql, execute:
-CREATE DATABASE frequencia_escolar ENCODING 'UTF8';
-\q
-```
+
+### 3. Criar o banco de dados
+
+--> No PostegreSql , Abra o pgadmin
+1. Procure PgAdmin no Computador
+
+<img width="865" height="757" alt="image" src="https://github.com/user-attachments/assets/60715683-6f2b-435d-867a-9f6f1f606a9e" />
+
+
+1.1 
+<img width="749" height="595" alt="image" src="https://github.com/user-attachments/assets/f44364b4-8911-45a8-9c51-194cd4dd117f" />
+
+
+
+2. Acesse o Postegree recente a senha de acesso é 1234
+
+   <img width="545" height="399" alt="image" src="https://github.com/user-attachments/assets/fe86c4c6-49f0-4932-b8fc-d6998dce5c0e" />
+
+2.1 clique com o Botao direito em Database
+
+
+   <img width="638" height="377" alt="image" src="https://github.com/user-attachments/assets/62061b60-2cbd-49ff-98b2-f1d043e11f5d" />
+
+   
+2.2 Insira o nome do seu Database
+
+
+   <img width="696" height="550" alt="image" src="https://github.com/user-attachments/assets/b95ea6fd-6112-490c-8301-d194cf949cb5" />
+
+   
+2.2 Clique em Save
+
+
+   <img width="698" height="552" alt="image" src="https://github.com/user-attachments/assets/1144808f-394d-42c4-9e41-a82883f7d965" />
+
+   
+3. Clique no Database Criado com o botao direito:
+
+
+<img width="495" height="498" alt="image" src="https://github.com/user-attachments/assets/eba19eae-3018-4632-9540-bcfa390dacdd" />
+
+
+3.1 Clique no Database Criado com o botao direito e selecione QueryTols:
+
+   <img width="413" height="486" alt="image" src="https://github.com/user-attachments/assets/2b56cb1a-6711-4f28-8e47-f2738072c6cc" />
 
 ### 2. Aplique o schema
 
 ```powershell
-psql -U postgres -d frequencia_escolar -f database/schema.sql
+CREATE TABLE IF NOT EXISTS alunos (
+    id                    SERIAL PRIMARY KEY,
+    nome                  VARCHAR(150)    NOT NULL,
+    turma                 VARCHAR(20)     NOT NULL,
+    telefone_responsavel  VARCHAR(20)     NOT NULL,
+    -- Vetor de 128 dimensões gerado pelo face_recognition (dlib)
+    embedding_facial      REAL[]          NOT NULL,
+    -- Canal preferencial de notificação: 'SMS', 'WHATSAPP' ou 'TELEGRAM'
+    canal_preferencial    VARCHAR(10)     NOT NULL DEFAULT 'WHATSAPP'
+                              CHECK (canal_preferencial IN ('SMS', 'WHATSAPP', 'TELEGRAM')),
+    -- Chat ID do Telegram, preenchido quando canal_preferencial = 'TELEGRAM'
+    telegram_chat_id      VARCHAR(50),
+    criado_em             TIMESTAMP       NOT NULL DEFAULT NOW()
+);
+
+-- Comentários descritivos para documentação
+COMMENT ON TABLE  alunos                        IS 'Cadastro de alunos com dados de contato e vetor facial';
+COMMENT ON COLUMN alunos.embedding_facial       IS 'Array de 128 floats gerado pelo dlib/face_recognition';
+COMMENT ON COLUMN alunos.canal_preferencial     IS 'Canal de envio da notificação ao responsável';
+
+-- ── Tabela de Registros de Presença ───────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS registro_presencas (
+    id               SERIAL PRIMARY KEY,
+    aluno_id         INTEGER     NOT NULL
+                         REFERENCES alunos (id) ON DELETE CASCADE,
+    data_hora        TIMESTAMP   NOT NULL DEFAULT NOW(),
+    unidade_escolar  VARCHAR(100) NOT NULL
+);
+
+COMMENT ON TABLE  registro_presencas              IS 'Log de entradas reconhecidas pela câmera';
+COMMENT ON COLUMN registro_presencas.data_hora    IS 'Momento exato do reconhecimento facial';
+
+-- ── Índices para Consultas Frequentes ────────────────────────────────────────
+-- Busca de presenças por aluno (verificação de duplicidade e relatórios)
+CREATE INDEX IF NOT EXISTS idx_presencas_aluno_id
+    ON registro_presencas (aluno_id);
+
+-- Busca por período (dashboard diário / por hora)
+CREATE INDEX IF NOT EXISTS idx_presencas_data_hora
+    ON registro_presencas (data_hora);
+
+-- Busca combinada: aluno + período (verificação de duplicidade de 30 min)
+CREATE INDEX IF NOT EXISTS idx_presencas_aluno_data
+    ON registro_presencas (aluno_id, data_hora DESC);
+
+-- ── View: Presenças por Hora (usada pelo endpoint do dashboard) ───────────────
+CREATE OR REPLACE VIEW vw_presencas_por_hora AS
+SELECT
+    DATE_TRUNC('hour', data_hora)                   AS hora,
+    EXTRACT(HOUR FROM data_hora)::INTEGER           AS hora_numero,
+    COUNT(*)                                        AS total_presencas
+FROM registro_presencas
+WHERE data_hora::DATE = CURRENT_DATE
+GROUP BY 1, 2
+ORDER BY 1;
+
+COMMENT ON VIEW vw_presencas_por_hora IS 'Agregação diária de entradas por hora para o dashboard';
+
 ```
 
 Esse script criará:
@@ -169,10 +268,14 @@ git clone https://github.com/ProfMarcos25/IAMetrics.git
 cd IAMetrics
 ```
 
+```powershell
+cd IAMetrics
+```
+
 ### 2. Crie o ambiente virtual
 
 ```powershell
-python -m venv .venv
+py -m venv .venv
 ```
 
 ### 3. Ative o ambiente virtual
@@ -180,12 +283,11 @@ python -m venv .venv
 ```powershell
 # Windows (PowerShell)
 .venv\Scripts\Activate.ps1
+```
 
+```powershell
 # Windows (CMD)
 .venv\Scripts\activate.bat
-
-# Linux / macOS
-source .venv/bin/activate
 ```
 
 > Após ativar, o prompt exibirá `(.venv)` no início.
@@ -193,16 +295,17 @@ source .venv/bin/activate
 ### 4. Atualize o pip
 
 ```powershell
-python -m pip install --upgrade pip
+py -m pip install --upgrade pip
 ```
 
 ### 5. Instale as dependências
 
 ```powershell
-pip install -r requirements.txt
+py -m pip install -r requirements.txt
 ```
 
 > ⏳ A instalação do `dlib` (compilação nativa) pode levar de **5 a 15 minutos**. Isso é normal.
+
 
 ### 6. Verifique a instalação
 
@@ -219,9 +322,6 @@ python -c "import face_recognition; import cv2; import fastapi; print('OK — to
 ```powershell
 # Windows
 copy .env.example .env
-
-# Linux / macOS
-cp .env.example .env
 ```
 
 ### 2. Edite o arquivo `.env`
@@ -231,7 +331,7 @@ Abra `.env` em qualquer editor de texto e preencha:
 ```dotenv
 # ── Banco de Dados ────────────────────────────────────────
 # Substitua 'sua_senha' pela senha do seu usuário PostgreSQL
-DB_URL=postgresql://postgres:sua_senha@localhost:5432/frequencia_escolar
+DB_URL=postgresql://postgres:1234@localhost:5432/frequencia_escolar
 
 # ── Twilio ────────────────────────────────────────────────
 # Obtenha em: https://console.twilio.com/
@@ -241,7 +341,8 @@ TWILIO_NUMERO_ORIGEM=+5511999990000
 
 # ── Telegram ──────────────────────────────────────────────
 # Crie um bot via @BotFather no Telegram
-TELEGRAM_BOT_TOKEN=0000000000:AAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TELEGRAM_BOT_TOKEN=8756218296:AAGjYY8tCs0rmFY0d_4dNsixZxWIL-ffIwQ
+TELEGRAM_CHAT_ID=634033523
 
 # ── Sistema ───────────────────────────────────────────────
 UNIDADE_ESCOLAR=Escola Estadual Jardim Iguatemi
@@ -278,8 +379,10 @@ INTERVALO_DUPLICIDADE_MINUTOS=30
 ### Modo Desenvolvimento (com hot-reload)
 
 ```powershell
-# Certifique-se de estar na raiz do projeto com o venv ativo
 cd backend
+```
+
+```powershell
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -287,6 +390,9 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ```powershell
 cd backend
+```
+
+```powershell
 uvicorn main:app --host 0.0.0.0 --port 8000 --workers 2
 ```
 
@@ -308,10 +414,10 @@ Com o servidor rodando, abra no navegador:
 
 | URL | Descrição |
 |-----|-----------|
-| `http://localhost:8000/app` | **Interface principal** (3 abas) |
-| `http://localhost:8000/docs` | Documentação interativa **Swagger UI** |
+| `http://localhost:8000/app`   | **Interface principal** (3 abas) |
+| `http://localhost:8000/docs`  | Documentação interativa **Swagger UI** |
 | `http://localhost:8000/redoc` | Documentação **ReDoc** |
-| `http://localhost:8000/` | Health-check da API |
+| `http://localhost:8000/`      | Health-check da API |
 
 ### Abas da Interface
 
